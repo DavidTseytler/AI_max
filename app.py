@@ -508,21 +508,21 @@ if __name__ == '__main__':
     os.makedirs(config.OUTPUT_FOLDER, exist_ok=True)
     os.makedirs(config.PROJECTS_FOLDER, exist_ok=True)
 
-# Запускаем бота MAX в отдельном потоке
-import threading
-from max_bot import main as bot_main
-bot_thread = threading.Thread(target=bot_main, daemon=True)
-bot_thread.start()
-
-app.run(debug=True, host='0.0.0.0', port=5000)
-
-import threading
-from max_bot import main as bot_main
-
-
-def start_bot():
+    # Запускаем бота MAX в отдельном потоке
+    import threading
+    from max_bot import main as bot_main
     bot_thread = threading.Thread(target=bot_main, daemon=True)
     bot_thread.start()
 
+    app.run(debug=True, host='0.0.0.0', port=5000)
 
-start_bot()
+    import threading
+    from max_bot import main as bot_main
+
+
+    def start_bot():
+        bot_thread = threading.Thread(target=bot_main, daemon=True)
+        bot_thread.start()
+
+
+    start_bot()
