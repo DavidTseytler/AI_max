@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мои проекты — Carousel Maker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://rsms.me/">
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { inter: ['Inter', 'sans-serif'] },
+                    colors: { primary: '#1D3461', secondary: '#4B6FA5', bg: '#F1F4F8' }
+                }
+            }
+        }
+    </script>
+    <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-bg min-h-screen">
+    <nav class="bg-white shadow-sm py-4 px-6">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            <a href="/" class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+                <span class="text-xl font-bold text-gray-900">Carousel Maker</span>
+            </a>
+            <a href="/" class="text-primary hover:text-secondary font-medium">← На главную</a>
+        </div>
+    </nav>
+
+    <div class="max-w-6xl mx-auto px-6 py-12">
+        <h1 class="text-3xl font-bold text-gray-900 mb-8">Мои проекты</h1>
+
+        {% if projects %}
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for project in projects %}
+            <a href="/project/{{ project.id }}" class="bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg transition-shadow border border-gray-100 group">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center text-white font-bold text-lg">
+                        {{ project.topic[0] }}
+                    </div>
+                    <span class="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-full">{{ project.slides_count }} слайдов</span>
+                </div>
+                <h3 class="font-semibold text-gray-900 mb-1 group-hover:text-primary transition-colors">{{ project.topic }}</h3>
+                <p class="text-sm text-gray-400">ID: {{ project.id[:8] }}...</p>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-16">
+            <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                </svg>
+            </div>
+            <p class="text-gray-500 text-lg">Пока нет проектов</p>
+            <a href="/" class="inline-block mt-4 text-primary hover:underline">Создать первый проект →</a>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

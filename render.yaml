@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: carousel-bot
+    env: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn app:app --workers 1 --threads 4 --timeout 120"
+    envVars:
+      - key: MAX_BOT_TOKEN
+        value: "ВАШ_ТОКЕН_БОТА"
+      - key: MAX_CHANNEL_ID
+        value: "ВАШ_ID_КАНАЛА"
+      - key: ADMIN_IDS
+        value: "33347466,117716446"

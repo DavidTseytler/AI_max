@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carousel Maker — AI Генератор вирусных каруселей</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://rsms.me/">
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#1D3461',
+                        secondary: '#4B6FA5',
+                        bg: '#F1F4F8',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .gradient-bg {
+            background: linear-gradient(135deg, #1D3461 0%, #4B6FA5 50%, #6B8FC5 100%);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .input-focus:focus {
+            box-shadow: 0 0 0 3px rgba(29, 52, 97, 0.15);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #1D3461, #4B6FA5);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(29, 52, 97, 0.3);
+        }
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        .float-anim { animation: float 3s ease-in-out infinite; }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in-up { animation: fadeInUp 0.6s ease-out forwards; }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); opacity: 0.5; }
+            100% { transform: scale(1.3); opacity: 0; }
+        }
+        .pulse-ring::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: rgba(29, 52, 97, 0.3);
+            animation: pulse-ring 2s ease-out infinite;
+        }
+        .textarea-expand {
+            min-height: 120px;
+            transition: all 0.3s ease;
+        }
+        .textarea-expand:focus {
+            min-height: 200px;
+        }
+        .char-counter {
+            font-size: 0.75rem;
+            color: #9CA3AF;
+            text-align: right;
+            margin-top: 0.25rem;
+        }
+        .slide-option {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .slide-option:hover {
+            background: rgba(29, 52, 97, 0.05);
+        }
+        .slide-option input:checked + div {
+            background: linear-gradient(135deg, #1D3461, #4B6FA5);
+            color: white;
+            border-color: #1D3461;
+        }
+        .slide-option input:checked + div .slide-num {
+            color: rgba(255,255,255,0.8);
+        }
+    </style>
+</head>
+<body class="bg-bg min-h-screen">
+    <!-- Header -->
+    <nav class="gradient-bg text-white py-4 px-6 shadow-lg">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center relative">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+                <div>
+                    <span class="text-xl font-bold tracking-tight">Carousel Maker</span>
+                    <span class="block text-xs text-white/60 -mt-0.5">AI-генератор вирусных каруселей</span>
+                </div>
+            </div>
+            <a href="/projects" class="text-white/80 hover:text-white transition-colors text-sm font-medium flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                </svg>
+                Мои проекты →
+            </a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="max-w-6xl mx-auto px-6 py-12">
+        <div class="grid lg:grid-cols-2 gap-12 items-start">
+            <!-- Left: Text -->
+            <div class="fade-in-up">
+                <div class="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-6">
+                    <span class="relative w-2 h-2">
+                        <span class="absolute w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                        <span class="absolute w-2 h-2 bg-green-500 rounded-full animate-ping"></span>
+                    </span>
+                    AI-генерация вирусного контента
+                </div>
+                <h1 class="text-5xl font-bold text-gray-900 leading-tight mb-6">
+                    Превращайте статьи<br>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">в вирусные карусели</span>
+                </h1>
+                <p class="text-lg text-gray-600 mb-8 leading-relaxed">
+                    Вставьте текст статьи — нейросеть сгенерирует цепляющие слайды
+                    с эмоциональными хуками, клиффхэнгерами и призывами к действию.
+                    Идеально для Instagram, VK и Telegram.
+                </p>
+
+                <!-- How it works -->
+                <div class="space-y-4 mb-8">
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <span class="text-primary font-bold text-sm">1</span>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-gray-900">Вставьте текст статьи</h4>
+                            <p class="text-sm text-gray-500">Любой текст: новость, обзор, кейс, описание товара</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <span class="text-primary font-bold text-sm">2</span>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-gray-900">Выберите количество слайдов</h4>
+                            <p class="text-sm text-gray-500">Рекомендуем 5–7 для максимального охвата</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <span class="text-primary font-bold text-sm">3</span>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-gray-900">AI генерирует контент</h4>
+                            <p class="text-sm text-gray-500">Заголовки, подзаголовки и тексты с триггерами</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Features -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="flex items-center gap-3 bg-white/60 rounded-lg px-3 py-2">
+                        <div class="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
+                            <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        </div>
+                        <span class="text-sm text-gray-700 font-medium">Эмоциональные хуки</span>
+                    </div>
+                    <div class="flex items-center gap-3 bg-white/60 rounded-lg px-3 py-2">
+                        <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                        </div>
+                        <span class="text-sm text-gray-700 font-medium">Клиффхэнгеры</span>
+                    </div>
+                    <div class="flex items-center gap-3 bg-white/60 rounded-lg px-3 py-2">
+                        <div class="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                            <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                        </div>
+                        <span class="text-sm text-gray-700 font-medium">Соц. доказательства</span>
+                    </div>
+                    <div class="flex items-center gap-3 bg-white/60 rounded-lg px-3 py-2">
+                        <div class="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center">
+                            <svg class="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/></svg>
+                        </div>
+                        <span class="text-sm text-gray-700 font-medium">Призывы к действию</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Form -->
+            <div class="fade-in-up" style="animation-delay: 0.2s;">
+                <div class="glass-card rounded-2xl p-8 shadow-xl">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                        </div>
+                        <h2 class="text-2xl font-bold text-gray-900">Создать карусель</h2>
+                    </div>
+                    <p class="text-gray-500 mb-6">Вставьте текст статьи и настройте параметры</p>
+
+                    <form action="/create_project" method="POST" class="space-y-5" id="carouselForm">
+                        <!-- Article Text -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                                Текст статьи
+                                <span class="text-red-500">*</span>
+                            </label>
+                            <textarea
+                                name="article_text"
+                                id="articleText"
+                                required
+                                placeholder="Вставьте сюда текст статьи, новости, обзора или описания товара. AI проанализирует его и создаст цепляющие слайды с эмоциональными заголовками..."
+                                class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 input-focus focus:border-primary focus:outline-none transition-all text-gray-800 placeholder-gray-400 resize-none textarea-expand text-sm leading-relaxed"
+                            ></textarea>
+                            <div class="char-counter">
+                                <span id="charCount">0</span> символов
+                            </div>
+                        </div>
+
+                        <!-- Topic (optional) -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                                </svg>
+                                Название проекта <span class="text-gray-400 font-normal">(опционально)</span>
+                            </label>
+                            <input type="text" name="topic"
+                                placeholder="Например: '10 фактов о ЖК Тигры'"
+                                class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 input-focus focus:border-primary focus:outline-none transition-all text-gray-800 placeholder-gray-400 text-sm">
+                        </div>
+
+                        <!-- Slide Count -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+                                </svg>
+                                Количество слайдов
+                            </label>
+                            <div class="grid grid-cols-3 gap-3">
+                                <label class="slide-option">
+                                    <input type="radio" name="num_slides" value="3" class="hidden">
+                                    <div class="border-2 border-gray-200 rounded-xl px-4 py-3 text-center hover:border-primary/50">
+                                        <div class="text-2xl font-bold">3</div>
+                                        <div class="slide-num text-xs text-gray-400 mt-1">Коротко</div>
+                                    </div>
+                                </label>
+                                <label class="slide-option">
+                                    <input type="radio" name="num_slides" value="5" class="hidden" checked>
+                                    <div class="border-2 border-gray-200 rounded-xl px-4 py-3 text-center hover:border-primary/50">
+                                        <div class="text-2xl font-bold">5</div>
+                                        <div class="slide-num text-xs text-gray-400 mt-1">Оптимально</div>
+                                    </div>
+                                </label>
+                                <label class="slide-option">
+                                    <input type="radio" name="num_slides" value="7" class="hidden">
+                                    <div class="border-2 border-gray-200 rounded-xl px-4 py-3 text-center hover:border-primary/50">
+                                        <div class="text-2xl font-bold">7</div>
+                                        <div class="slide-num text-xs text-gray-400 mt-1">Максимум</div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" id="submitBtn" class="btn-primary w-full py-4 rounded-xl text-white font-semibold text-lg flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                            <span id="btnText">Сгенерировать карусель</span>
+                            <svg id="btnSpinner" class="w-5 h-5 animate-spin hidden" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </button>
+
+                        <p class="text-xs text-gray-400 text-center">
+                            Генерация занимает 10–30 секунд. AI создаёт уникальный контент для каждого слайда.
+                        </p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Example Carousel -->
+    <div class="max-w-6xl mx-auto px-6 pb-16">
+        <h3 class="text-center text-gray-500 text-sm font-medium uppercase tracking-wider mb-8">Примеры слайдов</h3>
+        <div class="flex justify-center gap-4 overflow-x-auto pb-4">
+            <div class="float-anim flex-shrink-0 w-36 h-48 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-xl shadow-lg flex flex-col items-center justify-center text-white p-4 text-center relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                <span class="relative text-xs font-bold uppercase tracking-wider text-white/60 mb-2">Слайд 1</span>
+                <span class="relative font-bold text-sm leading-tight">Вы делаете эту ошибку каждый день</span>
+            </div>
+            <div class="float-anim flex-shrink-0 w-36 h-48 bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 rounded-xl shadow-lg flex flex-col items-center justify-center text-white p-4 text-center relative overflow-hidden" style="animation-delay: 0.5s;">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                <span class="relative text-xs font-bold uppercase tracking-wider text-white/60 mb-2">Слайд 3</span>
+                <span class="relative font-bold text-sm leading-tight">Факт, который разрушит ваши стереотипы</span>
+            </div>
+            <div class="float-anim flex-shrink-0 w-36 h-48 bg-gradient-to-br from-emerald-900 via-teal-800 to-cyan-900 rounded-xl shadow-lg flex flex-col items-center justify-center text-white p-4 text-center relative overflow-hidden" style="animation-delay: 1s;">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                <span class="relative text-xs font-bold uppercase tracking-wider text-white/60 mb-2">Слайд 5</span>
+                <span class="relative font-bold text-sm leading-tight">Напишите «+» и получите бонус</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-gray-200 py-8 text-center">
+        <p class="text-gray-400 text-sm">Carousel Maker — AI-генератор вирусных каруселей для соцсетей</p>
+        <p class="text-gray-300 text-xs mt-1">Работает на G4F + Flask + Pillow</p>
+    </footer>
+
+    <script>
+        // Character counter
+        const textarea = document.getElementById('articleText');
+        const charCount = document.getElementById('charCount');
+
+        textarea.addEventListener('input', function() {
+            const count = this.value.length;
+            charCount.textContent = count;
+            if (count > 50) {
+                charCount.classList.add('text-green-600');
+                charCount.classList.remove('text-gray-400');
+            } else {
+                charCount.classList.remove('text-green-600');
+                charCount.classList.add('text-gray-400');
+            }
+        });
+
+        // Form loading state
+        const form = document.getElementById('carouselForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        const btnSpinner = document.getElementById('btnSpinner');
+
+        form.addEventListener('submit', function(e) {
+            if (!textarea.value.trim()) {
+                e.preventDefault();
+                textarea.focus();
+                textarea.classList.add('border-red-500');
+                setTimeout(() => textarea.classList.remove('border-red-500'), 2000);
+                return;
+            }
+
+            submitBtn.disabled = true;
+            btnText.textContent = 'Генерация...';
+            btnSpinner.classList.remove('hidden');
+        });
+    </script>
+</body>
+</html>

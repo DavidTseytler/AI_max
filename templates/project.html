@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ project.topic }} — Carousel Maker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://rsms.me/">
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { inter: ['Inter', 'sans-serif'] },
+                    colors: { primary: '#1D3461', secondary: '#4B6FA5', bg: '#F1F4F8', accent: '#2563EB' }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .slider-thumb::-webkit-slider-thumb {
+            appearance: none;
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            background: #1D3461;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        .slider-thumb::-moz-range-thumb {
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            background: #1D3461;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        .color-swatch { transition: transform 0.15s; }
+        .color-swatch:hover { transform: scale(1.1); }
+        .theme-card { transition: all 0.2s; }
+        .theme-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .theme-card.active { ring: 2px solid #1D3461; }
+        .slide-thumb { transition: all 0.2s; }
+        .slide-thumb.active { ring: 2px solid #1D3461; background: #EEF2FF; }
+        .slide-thumb .theme-badge {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            z-index: 10;
+        }
+        .slide-thumb .theme-badge.dark { background: #1a1a2e; color: #fff; }
+        .slide-thumb .theme-badge.light { background: #f0f0f5; color: #333; border: 1px solid #ddd; }
+        .preview-img { box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
+        .panel-section { border-bottom: 1px solid #E5E7EB; padding-bottom: 1rem; margin-bottom: 1rem; }
+        .panel-section:last-child { border-bottom: none; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+    </style>
+<base target="_blank">
+</head>
+<body class="bg-bg min-h-screen">
+
+{% set sn = project.settings.slide_number %}
+{% set wm = project.settings.watermark %}
+{% set ar = project.settings.aspect_ratio %}
+{% set first_slide = project.slides[0] %}
+
+    <!-- Top Bar -->
+    <nav class="bg-white border-b border-gray-200 py-3 px-4 sticky top-0 z-50">
+        <div class="max-w-[1600px] mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <a href="/" class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                    </div>
+                </a>
+                <div>
+                    <h1 class="font-semibold text-gray-900 text-sm">{{ project.topic }}</h1>
+                    <p class="text-xs text-gray-400">{{ project.slides|length }} слайдов</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="/projects" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors">Проекты</a>
+                <!-- === NEW: Download PNG button in top bar === -->
+                <button onclick="downloadAllPngs()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4-4m0 0L8 8m4-4v12"/>
+                    </svg>
+                    Скачать все PNG
+                </button>
+                <a href="/export/{{ project.id }}" class="px-5 py-2 bg-primary hover:bg-primary/90 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4-4m0 0L8 8m4-4v12"/>
+                    </svg>
+                    Экспорт ZIP
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Editor -->
+    <div class="max-w-[1600px] mx-auto p-4">
+        <div class="grid grid-cols-1 lg:grid-cols-[220px_1fr_340px] gap-4 h-[calc(100vh-80px)]">
+
+            <!-- Left Panel: Slides Thumbnails -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
+                <div class="p-3 border-b border-gray-100 flex items-center justify-between">
+                    <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Слайды</span>
+                    <button onclick="addSlide()" class="w-7 h-7 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg flex items-center justify-center transition-colors" title="Добавить слайд">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    </button>
+                </div>
+                <div class="flex-1 overflow-y-auto p-2 space-y-2" id="slides-list">
+                    {% for slide in project.slides %}
+                    {% set is_active = 'active' if loop.index0 == 0 else '' %}
+                    <div class="slide-thumb rounded-lg p-2 cursor-pointer {{ is_active }}"
+                         data-slide-id="{{ slide.id }}" data-index="{{ loop.index0 }}"
+                         onclick="selectSlide('{{ slide.id }}', {{ loop.index0 }})">
+                        <div class="relative aspect-[4/5] bg-gray-100 rounded-lg overflow-hidden mb-2">
+                            <img src="/render/{{ project.id }}/{{ slide.id }}?t={{ loop.index0 }}"
+                                 class="w-full h-full object-cover" alt="Slide {{ loop.index }}">
+                            <div class="theme-badge {{ slide.theme_mode or 'dark' }}">
+                                {{ '☀' if slide.theme_mode == 'light' else '☾' }}
+                            </div>
+                            <div class="absolute top-1 right-1 bg-black/50 text-white text-[10px] px-1.5 py-0.5 rounded">
+                                {{ loop.index }}
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-center gap-1">
+                            <button onclick="event.stopPropagation(); moveSlide('{{ slide.id }}', 'up')"
+                                    class="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600" title="Вверх">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+                            </button>
+                            <button onclick="event.stopPropagation(); moveSlide('{{ slide.id }}', 'down')"
+                                    class="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600" title="Вниз">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                            <button onclick="event.stopPropagation(); duplicateSlide('{{ slide.id }}')"
+                                    class="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600" title="Дублировать">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                            </button>
+                            <button onclick="event.stopPropagation(); deleteSlide('{{ slide.id }}')"
+                                    class="p-1 hover:bg-red-50 rounded text-gray-400 hover:text-red-500" title="Удалить">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
+                            <button onclick="event.stopPropagation(); toggleThemeMode('{{ slide.id }}')"
+                                    class="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600" title="Сменить тему">
+                                <span class="text-xs">{{ '☀️' if slide.theme_mode == 'light' else '🌙' }}</span>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Center: Preview -->
+            <div class="flex flex-col items-center justify-center bg-gray-50/50 rounded-xl border border-gray-100 relative overflow-hidden">
+                <div class="absolute inset-0 opacity-5" style="background-image: radial-gradient(#1D3461 1px, transparent 1px); background-size: 20px 20px;"></div>
+                <div class="relative z-10 p-8">
+                    <img id="preview-image" src="/render/{{ project.id }}/{{ first_slide.id }}"
+                         class="preview-img rounded-lg max-h-[75vh] w-auto" alt="Preview">
+                </div>
+                <!-- === NEW: Download current slide button === -->
+                <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2">
+                    <button onclick="downloadCurrentPng()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-full shadow-lg text-xs font-medium flex items-center gap-2 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4-4m0 0L8 8m4-4v12"/>
+                        </svg>
+                        Скачать этот слайд (PNG)
+                    </button>
+                </div>
+                <div id="theme-indicator" class="absolute top-4 right-4 px-3 py-1.5 bg-white/90 backdrop-blur rounded-full shadow-sm text-xs font-medium border border-gray-100">
+                    <span id="theme-indicator-text">Тёмный режим</span>
+                </div>
+            </div>
+
+            <!-- Right Panel: Settings -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
+                <div class="p-3 border-b border-gray-100 flex items-center justify-between">
+                    <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Настройки</span>
+                    {% set badge_class = 'bg-yellow-50 text-yellow-700 border border-yellow-200' if first_slide.theme_mode == 'light' else 'bg-gray-800 text-gray-200 border border-gray-700' %}
+                    <span id="current-theme-badge" class="text-[10px] px-2 py-0.5 rounded-full font-medium {{ badge_class }}">
+                        {{ first_slide.theme_mode or 'dark' }}
+                    </span>
+                </div>
+                <div class="flex-1 overflow-y-auto p-4" id="settings-panel">
+
+                    <!-- Text Settings -->
+                    <div class="panel-section">
+                        <h3 class="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/></svg>
+                            Текст
+                        </h3>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="text-xs text-gray-500 mb-1 block">Заголовок</label>
+                                <input type="text" id="title-input"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all"
+                                    placeholder="Введите заголовок...">
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500 mb-1 block">Подзаголовок</label>
+                                <input type="text" id="subtitle-input"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all"
+                                    placeholder="Введите подзаголовок...">
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500 mb-1 block">Основной текст</label>
+                                <textarea id="body-input" rows="4"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all resize-none"
+                                    placeholder="Введите основной текст... Используйте ==текст== для выделения"></textarea>
+                                <p class="text-[10px] text-gray-400 mt-1">Оборачивайте слова в == == для цветного выделения</p>
+                            </div>
+                            <div class="mb-2">
+                                <label class="text-xs text-gray-500 mb-1 block">Позиция текста</label>
+                                <select id="text-position"
+                                    class="w-full px-2 py-2 text-sm border border-gray-200 rounded-lg focus:border-primary outline-none">
+                                    <option value="center">По центру</option>
+                                    <option value="top">Сверху</option>
+                                    <option value="bottom">Снизу</option>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-3 gap-2">
+                                <div>
+                                    <label class="text-xs text-gray-500 mb-1 block">Заголовок</label>
+                                    <div class="flex items-center gap-1">
+                                        <input type="color" id="title-color"
+                                            class="w-8 h-8 rounded-lg border border-gray-200 cursor-pointer p-0.5">
+                                        <button onclick="resetColor('title-color')" class="text-[10px] text-gray-400 hover:text-gray-600">×</button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="text-xs text-gray-500 mb-1 block">Подзаголовок</label>
+                                    <div class="flex items-center gap-1">
+                                        <input type="color" id="subtitle-color"
+                                            class="w-8 h-8 rounded-lg border border-gray-200 cursor-pointer p-0.5">
+                                        <button onclick="resetColor('subtitle-color')" class="text-[10px] text-gray-400 hover:text-gray-600">×</button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="text-xs text-gray-500 mb-1 block">Текст</label>
+                                    <div class="flex items-center gap-1">
+                                        <input type="color" id="body-color"
+                                            class="w-8 h-8 rounded-lg border border-gray-200 cursor-pointer p-0.5">
+                                        <button onclick="resetColor('body-color')" class="text-[10px] text-gray-400 hover:text-gray-600">×</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Highlight Settings -->
+                    <div class="panel-section">
+                        <h3 class="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                            </svg>
+                            Выделение текста
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" id="highlight-enabled" class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary">
+                                <label for="highlight-enabled" class="text-sm text-gray-700">Включить выделение</label>
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500 mb-1 block">Цвет выделения (заливка)</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="color" id="highlight-color" value="#3B82F6"
+                                        class="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer p-1">
+                                    <span class="text-xs text-gray-400">Как маркер — под текстом</span>
+                                </div>
+                            </div>
+                            <div class="bg-blue-50 border border-blue-100 rounded-lg p-2.5">
+                                <div class="flex items-start gap-2">
+                                    <svg class="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    <div>
+                                        <p class="text-xs text-blue-700 font-medium">Как выделять слова</p>
+                                        <p class="text-[11px] text-blue-600 mt-0.5">В текстовых полях оборачивайте слова в <code>==слово==</code>. Например: "Есть ==проблемные объекты==, риски высоки"</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <button onclick="applyHighlightToAll()"
+                                class="w-full py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-medium rounded-lg transition-colors border border-blue-200">
+                                Применить настройки выделения ко всем слайдам
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Font Settings -->
+                    <div class="panel-section">
+                        <h3 class="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                            Шрифт
+                        </h3>
+                        <div class="space-y-3">
+                            <div>
+                                <div class="flex justify-between text-xs text-gray-500 mb-1">
+                                    <span>Заголовок</span>
+                                    <span id="title-size-val">96px</span>
+                                </div>
+                                <input type="range" id="title-size" min="20" max="170" value="96"
+                                    class="slider-thumb w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs text-gray-500 mb-1">
+                                    <span>Подзаголовок</span>
+                                    <span id="subtitle-size-val">52px</span>
+                                </div>
+                                <input type="range" id="subtitle-size" min="16" max="100" value="52"
+                                    class="slider-thumb w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs text-gray-500 mb-1">
+                                    <span>Основной текст</span>
+                                    <span id="body-size-val">32px</span>
+                                </div>
+                                <input type="range" id="body-size" min="12" max="60" value="32"
+                                    class="slider-thumb w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs text-gray-500 mb-1">
+                                    <span>Межстрочный интервал</span>
+                                    <span id="line-height-val">1.25</span>
+                                </div>
+                                <input type="range" id="line-height" min="0.8" max="2.0" step="0.05" value="1.35"
+                                    class="slider-thumb w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs text-gray-500 mb-1">
+                                    <span>Межбуквенный интервал</span>
+                                    <span id="letter-spacing-val">-0.02em</span>
+                                </div>
+                                <input type="range" id="letter-spacing" min="-0.1" max="0.1" step="0.01" value="-0.02"
+                                    class="slider-thumb w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs text-gray-500 mb-1">
+                                    <span>Отступ абзаца</span>
+                                    <span id="paragraph-spacing-val">1.2em</span>
+                                </div>
+                                <input type="range" id="paragraph-spacing" min="0.5" max="2.0" step="0.1" value="1.2"
+                                    class="slider-thumb w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs text-gray-500 mb-1">
+                                    <span>Отступ: заголовок → подзаголовок</span>
+                                    <span id="title-gap-val">0.55</span>
+                                </div>
+                                <input type="range" id="title-gap" min="0" max="1.0" step="0.05" value="0.55"
+                                    class="slider-thumb w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                                <p class="text-[10px] text-gray-400 mt-0.5">0 = плотно, 1.0 = максимальный отступ</p>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs text-gray-500 mb-1">
+                                    <span>Отступ: подзаголовок → текст</span>
+                                    <span id="subtitle-gap-val">0.45</span>
+                                </div>
+                                <input type="range" id="subtitle-gap" min="0" max="1.0" step="0.05" value="0.45"
+                                    class="slider-thumb w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                                <p class="text-[10px] text-gray-400 mt-0.5">0 = плотно, 1.0 = максимальный отступ</p>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs text-gray-500 mb-1">
+                                    <span>Сдвиг текста (вверх/вниз)</span>
+                                    <span id="text-offset-y-val">0px</span>
+                                </div>
+                                <input type="range" id="text-offset-y" min="-300" max="100" value="-100"
+                                    class="slider-thumb w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                                <p class="text-[10px] text-gray-400 mt-0.5">Влево = текст выше (больше места для подписи), вправо = ниже</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Background Settings -->
+                    <div class="panel-section">
+                        <h3 class="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            Фон
+                        </h3>
+                        <div class="space-y-3">
+                            <div id="bg-upload-area">
+                                <input type="file" id="bg-file" accept="image/*" class="hidden" onchange="uploadBackground(this)">
+                                <div id="bg-preview-area" class="hidden">
+                                    <div class="relative rounded-lg overflow-hidden mb-2">
+                                        <img id="bg-preview-img" src="" class="w-full h-24 object-cover rounded-lg">
+                                        <div class="absolute inset-0 bg-black/30 flex items-center justify-center gap-2 opacity-0 hover:opacity-100 transition-opacity">
+                                            <button onclick="document.getElementById('bg-file').click()" class="px-3 py-1 bg-white text-xs rounded-full">Заменить</button>
+                                            <button onclick="removeBackground()" class="px-3 py-1 bg-red-500 text-white text-xs rounded-full">Удалить</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button id="bg-upload-btn" onclick="document.getElementById('bg-file').click()"
+                                    class="w-full py-3 border-2 border-dashed border-gray-200 rounded-lg text-gray-400 hover:border-primary hover:text-primary transition-colors text-sm flex items-center justify-center gap-2">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                                    Загрузить фон
+                                </button>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between text-xs text-gray-500 mb-1">
+                                    <span>Прозрачность фона</span>
+                                    <span id="bg-opacity-val">100%</span>
+                                </div>
+                                <input type="range" id="bg-opacity" min="0" max="100" value="100"
+                                    class="slider-thumb w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                            </div>
+
+                            <div class="bg-blue-50 border border-blue-100 rounded-lg p-2.5">
+                                <div class="flex items-start gap-2">
+                                    <svg class="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    <div>
+                                        <p class="text-xs text-blue-700 font-medium">Авто-градиент</p>
+                                        <p class="text-[11px] text-blue-600 mt-0.5">Градиент автоматически подстраивается под тёмный/светлый режим слайда.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" id="gradient-enabled" class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary">
+                                <label for="gradient-enabled" class="text-sm text-gray-700">Включить градиент</label>
+                            </div>
+
+                            <div id="gradient-settings" class="space-y-3 hidden">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="text-xs text-gray-500 mb-1 block">Цвет</label>
+                                        <input type="color" id="gradient-color"
+                                            class="w-full h-8 rounded-lg border border-gray-200 cursor-pointer p-0.5">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-gray-500 mb-1 block">Позиция</label>
+                                        <select id="gradient-position"
+                                            class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg focus:border-primary outline-none">
+                                            <option value="bottom">Снизу</option>
+                                            <option value="top">Сверху</option>
+                                            <option value="left">Слева</option>
+                                            <option value="right">Справа</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-xs text-gray-500 mb-1">
+                                        <span>Прозрачность градиента</span>
+                                        <span id="gradient-opacity-val">92%</span>
+                                    </div>
+                                    <input type="range" id="gradient-opacity" min="0" max="100" value="92"
+                                        class="slider-thumb w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-xs text-gray-500 mb-1">
+                                        <span>Глубина заливки</span>
+                                        <span id="gradient-depth-val">90%</span>
+                                    </div>
+                                    <input type="range" id="gradient-depth" min="0" max="100" value="90"
+                                        class="slider-thumb w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                                </div>
+                                <button onclick="resetGradientToAuto()"
+                                    class="w-full py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-medium rounded-lg transition-colors border border-blue-200">
+                                    Сбросить в авто-режим
+                                </button>
+                            </div>
+
+                            <button onclick="applyBgToAll()"
+                                class="w-full py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 text-xs font-medium rounded-lg transition-colors border border-gray-200">
+                                Применить настройки фона ко всем слайдам
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Current Colors -->
+                    <div class="panel-section">
+                        <h3 class="text-sm font-semibold text-gray-800 mb-3 flex items-center justify-between">
+                            <span>Текущие цвета</span>
+                            {% set mode_label_class = 'bg-yellow-50 text-yellow-700' if first_slide.theme_mode == 'light' else 'bg-gray-800 text-gray-200' %}
+                            <span id="current-mode-label" class="text-[10px] px-2 py-0.5 rounded-full {{ mode_label_class }}">тёмный</span>
+                        </h3>
+                        <div class="space-y-2" id="current-colors">
+                            <div class="flex items-center gap-2 text-xs">
+                                <span class="w-16 text-gray-500">Светлая:</span>
+                                <div class="flex gap-1" id="light-colors"></div>
+                            </div>
+                            <div class="flex items-center gap-2 text-xs">
+                                <span class="w-16 text-gray-500">Тёмная:</span>
+                                <div class="flex gap-1" id="dark-colors"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Themes -->
+                    <div class="panel-section">
+                        <h3 class="text-sm font-semibold text-gray-800 mb-3">Готовые темы</h3>
+                        <div class="grid grid-cols-2 gap-2" id="themes-grid">
+                            {% for theme_name, theme_data in themes.items() %}
+                            {% set theme_active = 'active' if theme_name == 'Ocean' else '' %}
+                            <div class="theme-card rounded-lg p-2 border border-gray-100 cursor-pointer {{ theme_active }}"
+                                 data-theme="{{ theme_name }}" onclick="applyTheme('{{ theme_name }}')">
+                                <div class="text-xs font-medium text-gray-700 mb-1.5">{{ theme_name }}</div>
+                                <div class="flex gap-1 mb-1">
+                                    {% for color_type, color in theme_data.light.items() %}
+                                    <div class="w-4 h-4 rounded-full color-swatch" style="background: {{ color }}" title="{{ color_type }}"></div>
+                                    {% endfor %}
+                                </div>
+                                <div class="flex gap-1">
+                                    {% for color_type, color in theme_data.dark.items() %}
+                                    <div class="w-4 h-4 rounded-full color-swatch" style="background: {{ color }}" title="{{ color_type }}"></div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Project Settings -->
+                    <div class="panel-section">
+                        <h3 class="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                            Настройки проекта
+                        </h3>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="text-xs text-gray-500 mb-1 block">Соотношение сторон</label>
+                                <div class="grid grid-cols-3 gap-2">
+                                    {% set btn45 = 'bg-primary text-white border-primary' if ar == '4:5' else 'text-gray-600' %}
+                                    {% set btn11 = 'bg-primary text-white border-primary' if ar == '1:1' else 'text-gray-600' %}
+                                    {% set btn916 = 'bg-primary text-white border-primary' if ar == '9:16' else 'text-gray-600' %}
+                                    <button onclick="setAspectRatio('4:5')" data-ratio="4:5"
+                                        class="aspect-btn px-3 py-2 text-xs border border-gray-200 rounded-lg hover:border-primary transition-colors {{ btn45 }}">4:5</button>
+                                    <button onclick="setAspectRatio('1:1')" data-ratio="1:1"
+                                        class="aspect-btn px-3 py-2 text-xs border border-gray-200 rounded-lg hover:border-primary transition-colors {{ btn11 }}">1:1</button>
+                                    <button onclick="setAspectRatio('9:16')" data-ratio="9:16"
+                                        class="aspect-btn px-3 py-2 text-xs border border-gray-200 rounded-lg hover:border-primary transition-colors {{ btn916 }}">9:16</button>
+                                </div>
+                            </div>
+
+                            <!-- Slide Number Settings -->
+                            <div class="border-t border-gray-100 pt-3">
+                                <div class="flex items-center gap-2 mb-2">
+                                    {% set sn_checked = 'checked' if sn.show else '' %}
+                                    <input type="checkbox" id="slide-number-show"
+                                        class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                        {{ sn_checked }}>
+                                    <label for="slide-number-show" class="text-sm text-gray-700 font-medium">Номера слайдов</label>
+                                </div>
+                                <p class="text-[10px] text-gray-400 mb-1">Стиль автоматически = подзаголовок</p>
+                                {% set sn_hidden = 'hidden' if not sn.show else '' %}
+                                <div id="slide-number-settings" class="space-y-2 {{ sn_hidden }}">
+                                    <select id="slide-number-pos" class="w-full px-2 py-1.5 text-xs border border-gray-200 rounded-lg">
+                                        {% set sn_pos = sn.position or 'bottom-right' %}
+                                        <option value="bottom-right" {{ 'selected' if sn_pos == 'bottom-right' else '' }}>Снизу справа</option>
+                                        <option value="bottom-left" {{ 'selected' if sn_pos == 'bottom-left' else '' }}>Снизу слева</option>
+                                        <option value="top-right" {{ 'selected' if sn_pos == 'top-right' else '' }}>Сверху справа</option>
+                                        <option value="top-left" {{ 'selected' if sn_pos == 'top-left' else '' }}>Сверху слева</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Watermark Settings -->
+                            <div class="border-t border-gray-100 pt-3">
+                                <label class="text-xs text-gray-500 mb-1 block font-medium">Водяной знак</label>
+                                <p class="text-[10px] text-gray-400 mb-1">Стиль автоматически = подзаголовок</p>
+                                <input type="text" id="watermark-text" value="{{ wm.text }}"
+                                    class="w-full px-2 py-1.5 text-xs border border-gray-200 rounded-lg mb-2" placeholder="@username">
+                                <select id="watermark-pos" class="w-full px-2 py-1.5 text-xs border border-gray-200 rounded-lg">
+                                    {% set wm_pos = wm.position or 'bottom-left' %}
+                                    <option value="bottom-left" {{ 'selected' if wm_pos == 'bottom-left' else '' }}>Снизу слева</option>
+                                    <option value="bottom-right" {{ 'selected' if wm_pos == 'bottom-right' else '' }}>Снизу справа</option>
+                                    <option value="top-left" {{ 'selected' if wm_pos == 'top-left' else '' }}>Сверху слева</option>
+                                    <option value="top-right" {{ 'selected' if wm_pos == 'top-right' else '' }}>Сверху справа</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const PROJECT_ID = '{{ project.id }}';
+        let currentSlideId = '{{ project.slides[0].id }}';
+        let currentSlideIndex = 0;
+        let updateTimeout = null;
+        const themes = {{ themes | tojson }};
+
+        let slidesData = {{ project.slides | tojson }};
+
+        const GRADIENT_PRESETS = {
+            dark: {
+                gradient_color: '#000000',
+                gradient_opacity: 92,
+                gradient_position: 'bottom',
+                gradient_depth: 90
+            },
+            light: {
+                gradient_color: '#ffffff',
+                gradient_opacity: 88,
+                gradient_position: 'bottom',
+                gradient_depth: 85
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSlideData(currentSlideId);
+            setupEventListeners();
+            updateCurrentColors();
+            updateThemeIndicator();
+        });
+
+        function selectSlide(slideId, index) {
+            currentSlideId = slideId;
+            currentSlideIndex = index;
+            document.querySelectorAll('.slide-thumb').forEach((el, i) => {
+                el.classList.toggle('active', i === index);
+            });
+            loadSlideData(slideId);
+            updateThemeIndicator();
+            refreshPreview();
+        }
+
+        function loadSlideData(slideId) {
+            const slide = getSlideData(slideId);
+            if (!slide) return;
+
+            document.getElementById('title-input').value = slide.title || '';
+            document.getElementById('subtitle-input').value = slide.subtitle || '';
+            document.getElementById('body-input').value = slide.body || '';
+            document.getElementById('title-color').value = slide.title_color || slide.text_color || '#FFFFFF';
+            document.getElementById('subtitle-color').value = slide.subtitle_color || slide.text_color || '#6B9FFF';
+            document.getElementById('body-color').value = slide.body_color || slide.text_color || '#E8E8E8';
+            document.getElementById('text-position').value = slide.text_position || 'bottom';
+
+            document.getElementById('title-size').value = slide.title_size || 96;
+            document.getElementById('title-size-val').textContent = (slide.title_size || 96) + 'px';
+            document.getElementById('subtitle-size').value = slide.subtitle_size || 52;
+            document.getElementById('subtitle-size-val').textContent = (slide.subtitle_size || 52) + 'px';
+            document.getElementById('body-size').value = slide.body_size || 32;
+            document.getElementById('body-size-val').textContent = (slide.body_size || 32) + 'px';
+            document.getElementById('line-height').value = slide.line_height || 1.35;
+            document.getElementById('line-height-val').textContent = slide.line_height || 1.35;
+            document.getElementById('letter-spacing').value = slide.letter_spacing || -0.02;
+            document.getElementById('letter-spacing-val').textContent = (slide.letter_spacing || -0.02) + 'em';
+            document.getElementById('paragraph-spacing').value = slide.paragraph_spacing || 1.2;
+            document.getElementById('paragraph-spacing-val').textContent = (slide.paragraph_spacing || 1.2) + 'em';
+            document.getElementById('title-gap').value = slide.title_gap !== undefined ? slide.title_gap : 0.55;
+            document.getElementById('title-gap-val').textContent = (slide.title_gap !== undefined ? slide.title_gap : 0.55);
+            document.getElementById('subtitle-gap').value = slide.subtitle_gap !== undefined ? slide.subtitle_gap : 0.45;
+            document.getElementById('subtitle-gap-val').textContent = (slide.subtitle_gap !== undefined ? slide.subtitle_gap : 0.45);
+
+            document.getElementById('text-offset-y').value = slide.text_offset_y !== undefined ? slide.text_offset_y : -100;
+            document.getElementById('text-offset-y-val').textContent = (slide.text_offset_y !== undefined ? slide.text_offset_y : -100) + 'px';
+
+            document.getElementById('bg-opacity').value = slide.bg_opacity || 100;
+            document.getElementById('bg-opacity-val').textContent = (slide.bg_opacity || 100) + '%';
+
+            document.getElementById('gradient-enabled').checked = slide.gradient_enabled !== false;
+            document.getElementById('gradient-color').value = slide.gradient_color || '#000000';
+            document.getElementById('gradient-position').value = slide.gradient_position || 'bottom';
+            document.getElementById('gradient-opacity').value = slide.gradient_opacity || 92;
+            document.getElementById('gradient-opacity-val').textContent = (slide.gradient_opacity || 92) + '%';
+            document.getElementById('gradient-depth').value = slide.gradient_depth || 90;
+            document.getElementById('gradient-depth-val').textContent = (slide.gradient_depth || 90) + '%';
+
+            document.getElementById('gradient-settings').classList.toggle('hidden', slide.gradient_enabled === false);
+
+            // Highlight settings
+            document.getElementById('highlight-enabled').checked = slide.highlight_enabled !== false;
+            document.getElementById('highlight-color').value = slide.highlight_color || '#3B82F6';
+
+            if (slide.background_image) {
+                document.getElementById('bg-preview-img').src = '/uploads/' + slide.background_image.split('/').pop();
+                document.getElementById('bg-preview-area').classList.remove('hidden');
+                document.getElementById('bg-upload-btn').classList.add('hidden');
+            } else {
+                document.getElementById('bg-preview-area').classList.add('hidden');
+                document.getElementById('bg-upload-btn').classList.remove('hidden');
+            }
+
+            document.querySelectorAll('.theme-card').forEach(el => {
+                el.classList.toggle('active', el.dataset.theme === slide.theme);
+            });
+
+            const badge = document.getElementById('current-theme-badge');
+            if (badge) {
+                badge.textContent = slide.theme_mode || 'dark';
+                badge.className = `text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                    slide.theme_mode === 'light'
+                        ? 'bg-yellow-50 text-yellow-700 border border-yellow-200'
+                        : 'bg-gray-800 text-gray-200 border border-gray-700'
+                }`;
+            }
+
+            const modeLabel = document.getElementById('current-mode-label');
+            if (modeLabel) {
+                modeLabel.textContent = slide.theme_mode === 'light' ? 'светлый' : 'тёмный';
+                modeLabel.className = `text-[10px] px-2 py-0.5 rounded-full ${
+                    slide.theme_mode === 'light'
+                        ? 'bg-yellow-50 text-yellow-700'
+                        : 'bg-gray-800 text-gray-200'
+                }`;
+            }
+
+            updateCurrentColors();
+        }
+
+        function getSlideData(slideId) {
+            return slidesData.find(s => s.id === slideId);
+        }
+
+        function updateThemeIndicator() {
+            const slide = getSlideData(currentSlideId);
+            if (!slide) return;
+            const indicator = document.getElementById('theme-indicator-text');
+            const indicatorEl = document.getElementById('theme-indicator');
+            if (slide.theme_mode === 'light') {
+                indicator.textContent = '☀ Светлый режим';
+                indicatorEl.className = 'absolute top-4 right-4 px-3 py-1.5 bg-yellow-50/90 backdrop-blur rounded-full shadow-sm text-xs font-medium border border-yellow-200 text-yellow-800';
+            } else {
+                indicator.textContent = '☾ Тёмный режим';
+                indicatorEl.className = 'absolute top-4 right-4 px-3 py-1.5 bg-gray-900/90 backdrop-blur rounded-full shadow-sm text-xs font-medium border border-gray-700 text-gray-200';
+            }
+        }
+
+        function setupEventListeners() {
+            ['title-input', 'subtitle-input', 'body-input'].forEach(id => {
+                document.getElementById(id).addEventListener('input', debouncedUpdate);
+            });
+
+            document.getElementById('title-color').addEventListener('input', debouncedUpdate);
+            document.getElementById('subtitle-color').addEventListener('input', debouncedUpdate);
+            document.getElementById('body-color').addEventListener('input', debouncedUpdate);
+            document.getElementById('text-position').addEventListener('change', debouncedUpdate);
+
+            // Highlight listeners
+            document.getElementById('highlight-enabled').addEventListener('change', debouncedUpdate);
+            document.getElementById('highlight-color').addEventListener('input', debouncedUpdate);
+
+            const sliders = [
+                ['title-size', 'title-size-val', 'px'],
+                ['subtitle-size', 'subtitle-size-val', 'px'],
+                ['body-size', 'body-size-val', 'px'],
+                ['line-height', 'line-height-val', ''],
+                ['letter-spacing', 'letter-spacing-val', 'em'],
+                ['paragraph-spacing', 'paragraph-spacing-val', 'em'],
+                ['title-gap', 'title-gap-val', ''],
+                ['subtitle-gap', 'subtitle-gap-val', ''],
+                ['bg-opacity', 'bg-opacity-val', '%'],
+                ['gradient-opacity', 'gradient-opacity-val', '%'],
+                ['gradient-depth', 'gradient-depth-val', '%'],
+                ['text-offset-y', 'text-offset-y-val', 'px']
+            ];
+
+            sliders.forEach(([id, valId, suffix]) => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('input', (e) => {
+                        document.getElementById(valId).textContent = e.target.value + suffix;
+                        debouncedUpdate();
+                    });
+                }
+            });
+
+            document.getElementById('gradient-enabled').addEventListener('change', (e) => {
+                document.getElementById('gradient-settings').classList.toggle('hidden', !e.target.checked);
+                debouncedUpdate();
+            });
+
+            document.getElementById('gradient-color').addEventListener('input', debouncedUpdate);
+            document.getElementById('gradient-position').addEventListener('change', debouncedUpdate);
+
+            document.getElementById('slide-number-show').addEventListener('change', updateSettings);
+            document.getElementById('slide-number-pos').addEventListener('change', updateSettings);
+            document.getElementById('watermark-text').addEventListener('input', debouncedUpdateSettings);
+            document.getElementById('watermark-pos').addEventListener('change', updateSettings);
+        }
+
+        function debouncedUpdate() {
+            if (updateTimeout) clearTimeout(updateTimeout);
+            updateTimeout = setTimeout(() => {
+                updateSlide();
+                refreshPreview();
+            }, 300);
+        }
+
+        function debouncedUpdateSettings() {
+            if (updateTimeout) clearTimeout(updateTimeout);
+            updateTimeout = setTimeout(updateSettings, 300);
+        }
+
+        function parseHighlightSegments(text) {
+            const segments = [];
+            const pattern = /==(.*?)==/g;
+            let lastEnd = 0;
+            let match;
+
+            while ((match = pattern.exec(text)) !== null) {
+                if (match.index > lastEnd) {
+                    segments.push({ text: text.substring(lastEnd, match.index), highlight: false });
+                }
+                segments.push({ text: match[1], highlight: true });
+                lastEnd = match.index + match[0].length;
+            }
+
+            if (lastEnd < text.length) {
+                segments.push({ text: text.substring(lastEnd), highlight: false });
+            }
+
+            if (segments.length === 0) {
+                segments.push({ text: text, highlight: false });
+            }
+
+            return segments;
+        }
+
+        async function updateSlide() {
+            const slide = getSlideData(currentSlideId);
+            if (!slide) return;
+
+            const newTitle = document.getElementById('title-input').value;
+            const newSubtitle = document.getElementById('subtitle-input').value;
+            const newBody = document.getElementById('body-input').value;
+            const newTitleColor = document.getElementById('title-color').value;
+            const newSubtitleColor = document.getElementById('subtitle-color').value;
+            const newBodyColor = document.getElementById('body-color').value;
+
+            const titleSegments = parseHighlightSegments(newTitle);
+            const subtitleSegments = parseHighlightSegments(newSubtitle);
+            const bodySegments = parseHighlightSegments(newBody);
+
+            const data = {
+                slide_id: currentSlideId,
+                title: newTitle.replace(/==(.*?)==/g, '$1'),
+                subtitle: newSubtitle.replace(/==(.*?)==/g, '$1'),
+                body: newBody.replace(/==(.*?)==/g, '$1'),
+                title_segments: titleSegments,
+                subtitle_segments: subtitleSegments,
+                body_segments: bodySegments,
+                title_color: newTitleColor,
+                subtitle_color: newSubtitleColor,
+                body_color: newBodyColor,
+                text_color: slide.text_color || '',
+                text_position: document.getElementById('text-position').value,
+                text_align: slide.text_align || 'left',
+                title_size: parseInt(document.getElementById('title-size').value),
+                subtitle_size: parseInt(document.getElementById('subtitle-size').value),
+                body_size: parseInt(document.getElementById('body-size').value),
+                line_height: parseFloat(document.getElementById('line-height').value),
+                letter_spacing: parseFloat(document.getElementById('letter-spacing').value),
+                paragraph_spacing: parseFloat(document.getElementById('paragraph-spacing').value),
+                title_gap: parseFloat(document.getElementById('title-gap').value),
+                subtitle_gap: parseFloat(document.getElementById('subtitle-gap').value),
+                text_offset_y: parseInt(document.getElementById('text-offset-y').value),
+                background_image: slide.background_image || '',
+                bg_opacity: parseInt(document.getElementById('bg-opacity').value),
+                bg_offset_x: slide.bg_offset_x || 50,
+                bg_offset_y: slide.bg_offset_y || 50,
+                bg_scale: slide.bg_scale || 100,
+                gradient_enabled: document.getElementById('gradient-enabled').checked,
+                gradient_color: document.getElementById('gradient-color').value,
+                gradient_opacity: parseInt(document.getElementById('gradient-opacity').value),
+                gradient_position: document.getElementById('gradient-position').value,
+                gradient_depth: parseInt(document.getElementById('gradient-depth').value),
+                highlight_enabled: document.getElementById('highlight-enabled').checked,
+                highlight_color: document.getElementById('highlight-color').value,
+            };
+
+            try {
+                const res = await fetch(`/update_slide/${PROJECT_ID}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await res.json();
+                if (result.success) {
+                    slide.title = newTitle.replace(/==(.*?)==/g, '$1');
+                    slide.subtitle = newSubtitle.replace(/==(.*?)==/g, '$1');
+                    slide.body = newBody.replace(/==(.*?)==/g, '$1');
+                    slide.title_segments = titleSegments;
+                    slide.subtitle_segments = subtitleSegments;
+                    slide.body_segments = bodySegments;
+                    slide.title_color = newTitleColor;
+                    slide.subtitle_color = newSubtitleColor;
+                    slide.body_color = newBodyColor;
+                    slide.title_size = data.title_size;
+                    slide.subtitle_size = data.subtitle_size;
+                    slide.body_size = data.body_size;
+                    slide.line_height = data.line_height;
+                    slide.letter_spacing = data.letter_spacing;
+                    slide.paragraph_spacing = data.paragraph_spacing;
+                    slide.title_gap = data.title_gap;
+                    slide.subtitle_gap = data.subtitle_gap;
+                    slide.text_offset_y = data.text_offset_y;
+                    slide.text_position = data.text_position;
+                    slide.bg_opacity = data.bg_opacity;
+                    slide.gradient_enabled = data.gradient_enabled;
+                    slide.gradient_color = data.gradient_color;
+                    slide.gradient_opacity = data.gradient_opacity;
+                    slide.gradient_position = data.gradient_position;
+                    slide.gradient_depth = data.gradient_depth;
+                    slide.highlight_enabled = data.highlight_enabled;
+                    slide.highlight_color = data.highlight_color;
+                }
+            } catch (e) {
+                console.error('Update error:', e);
+            }
+        }
+
+        async function updateSettings() {
+            const data = {
+                slide_number: {
+                    show: document.getElementById('slide-number-show').checked,
+                    position: document.getElementById('slide-number-pos').value
+                },
+                watermark: {
+                    text: document.getElementById('watermark-text').value,
+                    position: document.getElementById('watermark-pos').value
+                }
+            };
+
+            document.getElementById('slide-number-settings').classList.toggle('hidden', !data.slide_number.show);
+
+            try {
+                await fetch(`/update_settings/${PROJECT_ID}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                refreshPreview();
+            } catch (e) {
+                console.error('Settings update error:', e);
+            }
+        }
+
+        function refreshPreview() {
+            const img = document.getElementById('preview-image');
+            img.src = `/render/${PROJECT_ID}/${currentSlideId}?t=${Date.now()}`;
+            const thumbs = document.querySelectorAll('.slide-thumb');
+            if (thumbs[currentSlideIndex]) {
+                const thumbImg = thumbs[currentSlideIndex].querySelector('img');
+                if (thumbImg) {
+                    thumbImg.src = `/render/${PROJECT_ID}/${currentSlideId}?t=${Date.now()}`;
+                }
+            }
+        }
+
+        // ==================== NEW: PNG DOWNLOAD FUNCTIONS ====================
+
+        async function downloadCurrentPng() {
+            const slide = getSlideData(currentSlideId);
+            if (!slide) return;
+            const slideNum = slide.order + 1;
+            const filename = `slide_${slideNum}_${PROJECT_ID.slice(0,8)}.png`;
+
+            try {
+                const response = await fetch(`/render/${PROJECT_ID}/${currentSlideId}`);
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            } catch (e) {
+                console.error('Download error:', e);
+                alert('Ошибка при скачивании слайда');
+            }
+        }
+
+        async function downloadAllPngs() {
+            if (!confirm(`Скачать ${slidesData.length} слайдов?`)) return;
+
+            for (let i = 0; i < slidesData.length; i++) {
+                const slide = slidesData[i];
+                const filename = `slide_${slide.order + 1}_${PROJECT_ID.slice(0,8)}.png`;
+
+                try {
+                    const response = await fetch(`/render/${PROJECT_ID}/${slide.id}`);
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+
+                    // Small delay to avoid browser blocking multiple downloads
+                    await new Promise(r => setTimeout(r, 300));
+                } catch (e) {
+                    console.error(`Download error for slide ${slide.order + 1}:`, e);
+                }
+            }
+        }
+
+        // ==================== END NEW FUNCTIONS ====================
+
+        async function applyTheme(themeName) {
+            document.querySelectorAll('.theme-card').forEach(el => {
+                el.classList.toggle('active', el.dataset.theme === themeName);
+            });
+            try {
+                const res = await fetch(`/apply_theme/${PROJECT_ID}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ theme: themeName })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    slidesData.forEach(s => {
+                        s.theme = themeName;
+                        s.title_color = '';
+                        s.subtitle_color = '';
+                        s.body_color = '';
+                        s.text_color = '';
+                    });
+                    loadSlideData(currentSlideId);
+                    updateCurrentColors();
+                    refreshPreview();
+                    refreshAllThumbnails();
+                }
+            } catch (e) {
+                console.error('Theme apply error:', e);
+            }
+        }
+
+        function updateCurrentColors() {
+            const slide = getSlideData(currentSlideId);
+            if (!slide) return;
+            const theme = themes[slide.theme] || themes['Ocean'];
+            const lightColors = document.getElementById('light-colors');
+            const darkColors = document.getElementById('dark-colors');
+            lightColors.innerHTML = '';
+            darkColors.innerHTML = '';
+            Object.values(theme.light).forEach(color => {
+                lightColors.innerHTML += `<div class="w-5 h-5 rounded-full border border-gray-200" style="background:${color}"></div>`;
+            });
+            Object.values(theme.dark).forEach(color => {
+                darkColors.innerHTML += `<div class="w-5 h-5 rounded-full border border-gray-200" style="background:${color}"></div>`;
+            });
+        }
+
+        async function uploadBackground(input) {
+            if (!input.files || !input.files[0]) return;
+            const formData = new FormData();
+            formData.append('file', input.files[0]);
+            try {
+                const res = await fetch(`/upload_background/${PROJECT_ID}/${currentSlideId}`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('bg-preview-img').src = '/uploads/' + data.path.split('/').pop();
+                    document.getElementById('bg-preview-area').classList.remove('hidden');
+                    document.getElementById('bg-upload-btn').classList.add('hidden');
+                    const slide = getSlideData(currentSlideId);
+                    if (slide) slide.background_image = data.path;
+                    refreshPreview();
+                }
+            } catch (e) {
+                console.error('Upload error:', e);
+            }
+        }
+
+        async function removeBackground() {
+            try {
+                await fetch(`/remove_background/${PROJECT_ID}/${currentSlideId}`, { method: 'POST' });
+                document.getElementById('bg-preview-area').classList.add('hidden');
+                document.getElementById('bg-upload-btn').classList.remove('hidden');
+                const slide = getSlideData(currentSlideId);
+                if (slide) slide.background_image = '';
+                refreshPreview();
+            } catch (e) {
+                console.error('Remove error:', e);
+            }
+        }
+
+        async function applyBgToAll() {
+            try {
+                await fetch(`/apply_bg_to_all/${PROJECT_ID}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ slide_id: currentSlideId })
+                });
+                location.reload();
+            } catch (e) {
+                console.error('Apply to all error:', e);
+            }
+        }
+
+        async function applyHighlightToAll() {
+            const highlightColor = document.getElementById('highlight-color').value;
+            const highlightEnabled = document.getElementById('highlight-enabled').checked;
+
+            try {
+                slidesData.forEach(s => {
+                    s.highlight_color = highlightColor;
+                    s.highlight_enabled = highlightEnabled;
+                });
+
+                for (const slide of slidesData) {
+                    await fetch(`/update_slide/${PROJECT_ID}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            slide_id: slide.id,
+                            highlight_color: highlightColor,
+                            highlight_enabled: highlightEnabled
+                        })
+                    });
+                }
+                refreshAllThumbnails();
+            } catch (e) {
+                console.error('Apply highlight to all error:', e);
+            }
+        }
+
+        async function addSlide() {
+            try {
+                const res = await fetch(`/add_slide/${PROJECT_ID}`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) location.reload();
+            } catch (e) {
+                console.error('Add slide error:', e);
+            }
+        }
+
+        async function deleteSlide(slideId) {
+            if (!confirm('Удалить этот слайд?')) return;
+            try {
+                const res = await fetch(`/delete_slide/${PROJECT_ID}/${slideId}`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) location.reload();
+                else alert(data.error || 'Ошибка удаления');
+            } catch (e) {
+                console.error('Delete error:', e);
+            }
+        }
+
+        async function duplicateSlide(slideId) {
+            try {
+                const res = await fetch(`/duplicate_slide/${PROJECT_ID}/${slideId}`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) location.reload();
+            } catch (e) {
+                console.error('Duplicate error:', e);
+            }
+        }
+
+        async function moveSlide(slideId, direction) {
+            try {
+                await fetch(`/reorder_slide/${PROJECT_ID}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ slide_id: slideId, direction })
+                });
+                location.reload();
+            } catch (e) {
+                console.error('Reorder error:', e);
+            }
+        }
+
+        async function toggleThemeMode(slideId) {
+            try {
+                const res = await fetch(`/toggle_theme_mode/${PROJECT_ID}/${slideId}`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    const slide = slidesData.find(s => s.id === slideId);
+                    if (slide) {
+                        slide.theme_mode = data.theme_mode;
+                        const preset = GRADIENT_PRESETS[data.theme_mode];
+                        slide.gradient_color = preset.gradient_color;
+                        slide.gradient_opacity = preset.gradient_opacity;
+                        slide.gradient_position = preset.gradient_position;
+                        slide.gradient_depth = preset.gradient_depth;
+                    }
+                    const thumbEl = document.querySelector(`.slide-thumb[data-slide-id="${slideId}"]`);
+                    if (thumbEl) {
+                        const badge = thumbEl.querySelector('.theme-badge');
+                        const btn = thumbEl.querySelector('button[title^="Сменить тему"] span');
+                        if (badge) {
+                            badge.className = `theme-badge ${data.theme_mode}`;
+                            badge.textContent = data.theme_mode === 'light' ? '☀' : '☾';
+                        }
+                        if (btn) btn.textContent = data.theme_mode === 'light' ? '☀️' : '🌙';
+                    }
+                    if (slideId === currentSlideId) {
+                        loadSlideData(slideId);
+                        updateThemeIndicator();
+                    }
+                    refreshPreview();
+                    refreshAllThumbnails();
+                }
+            } catch (e) {
+                console.error('Toggle theme error:', e);
+            }
+        }
+
+
+        function resetGradientToAuto() {
+            const slide = getSlideData(currentSlideId);
+            if (!slide) return;
+            const mode = slide.theme_mode || 'dark';
+            const preset = GRADIENT_PRESETS[mode];
+            document.getElementById('gradient-color').value = preset.gradient_color;
+            document.getElementById('gradient-opacity').value = preset.gradient_opacity;
+            document.getElementById('gradient-opacity-val').textContent = preset.gradient_opacity + '%';
+            document.getElementById('gradient-position').value = preset.gradient_position;
+            document.getElementById('gradient-depth').value = preset.gradient_depth;
+            document.getElementById('gradient-depth-val').textContent = preset.gradient_depth + '%';
+            debouncedUpdate();
+        }
+
+        async function setAspectRatio(ratio) {
+            try {
+                await fetch(`/update_settings/${PROJECT_ID}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ aspect_ratio: ratio })
+                });
+                document.querySelectorAll('.aspect-btn').forEach(btn => {
+                    btn.classList.toggle('bg-primary', btn.dataset.ratio === ratio);
+                    btn.classList.toggle('text-white', btn.dataset.ratio === ratio);
+                    btn.classList.toggle('border-primary', btn.dataset.ratio === ratio);
+                    btn.classList.toggle('text-gray-600', btn.dataset.ratio !== ratio);
+                });
+                refreshPreview();
+                refreshAllThumbnails();
+            } catch (e) {
+                console.error('Aspect ratio error:', e);
+            }
+        }
+
+        function resetColor(id) {
+            const slide = getSlideData(currentSlideId);
+            if (!slide) return;
+            const mode = slide.theme_mode || 'dark';
+            const theme = themes[slide.theme] || themes['Ocean'];
+            const colors = theme[mode];
+            let defaultColor;
+            if (id === 'title-color') defaultColor = colors.title;
+            else if (id === 'subtitle-color') defaultColor = colors.subtitle;
+            else defaultColor = colors.body;
+            document.getElementById(id).value = defaultColor;
+            debouncedUpdate();
+        }
+
+        function refreshAllThumbnails() {
+            document.querySelectorAll('.slide-thumb img').forEach((img, i) => {
+                const slideId = document.querySelectorAll('.slide-thumb')[i].dataset.slideId;
+                img.src = `/render/${PROJECT_ID}/${slideId}?t=${Date.now()}`;
+            });
+        }
+    </script>
+</body>
+</html>
